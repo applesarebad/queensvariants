@@ -1,0 +1,354 @@
+---
+// src/pages/queens.astro
+// Drop this into your Astro project's src/pages/ folder
+import '../styles/global.css';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Queens</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+
+	<body
+		class="bg-gray-50 min-h-screen flex flex-col items-center justify-center px-4 py-10"
+	>
+		<div class="w-full max-w-1/4 mb-6">
+			<div class="flex items-center justify-between">
+				<div>
+					<h1
+						class="text-2xl text-gray-900 tracking-tight"
+					>
+						Queens
+					</h1>
+					<p class="text-sm text-gray-400 mt-0.5">
+						Place one queen per row, column & region
+					</p>
+				</div>
+				<button
+					id="btn-reset"
+					class="text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors duration-150"
+				>
+					Reset
+				</button>
+			</div>
+		</div>
+
+		<div
+  			id="board"
+  				class="w-full max-w-1/3  aspect-square grid overflow-hidden border border-gray-200"
+			>
+		</div>
+	</body>
+</html>
+
+<style is:global>
+	body {
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
+
+	.cell {
+		aspect-ratio: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		border: 1px solid rgba(0, 0, 0, 0.07);
+		user-select: none;
+		position: relative;
+		font-size: clamp(10px, 2.5vw, 22px);
+	}
+
+	.cell:hover {
+		filter: brightness(0.94);
+	}
+
+	.cell[data-state="marked"]::after {
+		content: "×";
+		color: rgba(0, 0, 0, 0.35);
+		font-size: 2em;
+		font-weight: 300;
+		line-height: 1;
+		padding-bottom: 10%;
+	}
+
+	.cell[data-state="queen"]::after {
+		content: "♛";
+		font-size: 2em;
+		color: #1a1a1a;
+		line-height: 1;
+		padding-bottom: 10%;
+	}
+
+	.cell[data-conflict="true"]::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: rgba(239, 68, 68, 0.18);
+		border-width: 1px;
+		border-color: red;
+		pointer-events: none;
+	}
+</style>
+
+<script>
+
+	const PUZZLE = {
+		n: 8,
+		regions: [
+			[100, 100, 1  , 1  , 1  , 2  , 2  , 2  ],
+			[100, 100, 1  , 1  , 1  , 2  , 2  , 2],
+			[100, 100, 3  , 3  , 4  , 4  , 2  , 2],
+			[100, 100, 3  , 3  , 4  , 4  , 2  , 2],
+			[6  , 6  , 3  , 4  , 4  , 4  , 120, 120],
+			[6  , 6  , 3  , 4  , 7  , 7  , 120, 120],
+			[6  , 6  , 6  , 7  , 7  , 7  , 120, 120],
+			[6  , 6  , 6  , 7  , 7  , 7  , 120, 120],
+		],
+	};
+	const REGION_COLORS = [
+		"#fde8e8",
+		"#fef3cd",
+		"#d4edda",
+		"#cce5ff",
+		"#e2d9f3",
+		"#fde8f5",
+		"#d6f5f0",
+		"#ffe8cc",
+	];
+
+	// ───────────────────────────────────────────────────────────────────
+	const N = PUZZLE.n;
+	let grid = [];
+
+
+	const CELL_TYPES = ['normal', 'mirror', 'bomb', 'portal'];
+
+	function initGrid() {
+		grid = Array.from({ length: N }, (_, r) =>
+			Array.from({ length: N }, (_, c) => 
+				makeCell(c, r)
+			),
+		);
+	}
+	function makeCell(c, r){
+		const region = PUZZLE.regions[r][c];
+			return {
+				state: "empty",
+				region: region,
+				colour: region % 20,
+				celltype: CELL_TYPES[Math.floor(region / 100)],
+				conflict: false,
+				seenqueens: 0,
+				r: r,
+				c: c,
+				humanplacer: false,
+			};
+	}
+
+
+
+	// ─────────────────────────────────────────────────────────────────
+	function set_cell(cell, state, human = false, mirrored = false){
+		if (state == 'queen'){
+			queen_set(cell)
+		}
+		else if (state == 'marked'){
+			cell.state = state
+			if(human){cell.humanplacer = true}
+		}
+		else{
+			let storage = cell.state
+			cell.state = state
+			cell.humanplacer = false
+			if (storage == 'queen'){
+				queencount -= 1
+				unmark(cell.r, cell.c)
+			}
+		}
+
+		if (cell.celltype == 'mirror' && !mirrored){
+			let mirror_cell = grid[N-cell.r-1][N-cell.c-1]
+			set_cell(mirror_cell, state, human, true)
+		}
+	}
+	function queen_set(cell){
+		cell.state = 'queen'
+		cell.humanplacer = false
+		queencount += 1
+		automark(cell.r, cell.c)
+		wincheck()
+	}
+
+	function findseen(r,c){
+		let total = []
+		let cell = grid[r][c]
+		for(let r2 = 0; r2 < N; r2++){
+			for(let c2 = 0; c2< N; c2++){
+				let check = grid[r2][c2]
+				let seen = false
+				if(r == r2 || c == c2 || cell.region == check.region){
+					seen = true
+				}
+				if(Math.abs(r-r2) <= 1 && Math.abs(c-c2) <= 1){
+					seen = true
+				}
+				if(cell == check){
+					seen = false
+				}
+
+				if(seen){
+					if(check.celltype == 'mirror'){
+						let mirror_cell = grid[N-r2-1][N-c2-1]
+						if(cell !== mirror_cell){total.push(grid[N-r2-1][N-c2-1])}
+					}
+					total.push(check)
+				}
+			}
+		}
+		return [...new Set(total)];
+	}
+
+	function automark(r, c) {
+		let seen = findseen(r,c)
+		for(let check of seen){
+			check.seenqueens += 1
+			if(check.state == 'empty'){
+				set_cell(check, "marked")
+			}
+		}
+	}
+
+	function unmark(r, c){
+		console.log(r,c)
+		let seen = findseen(r, c)
+		for(let check of seen){
+			check.seenqueens -= 1
+			if(check.seenqueens <= 0){
+				if(check.state == 'marked' && !check.humanplacer){
+					set_cell(check, "empty")
+				}
+			}
+		}
+	}
+
+	function wincheck(){
+		let clear = true
+		for(let r = 0; r < N; r++){
+			for(let c = 0; c< N; c++){
+				let cell = grid[r][c]
+				if (cell.state == 'queen'){
+					let seen = findseen(r,c)
+					let conflicter = false
+					for(let see of seen){
+						if(see.state == 'queen'){
+							see.conflict = true
+							cell.conflict = true
+							conflicter = true
+							clear = false
+						}
+					}
+					if (!conflicter){
+						cell.conflict = false
+					}
+				}
+				else{
+					cell.conflict = false
+				}
+			}
+		}
+
+		if(clear && queencount == N){
+			console.log("youwin")
+		}
+	}
+
+
+
+	const boardEl = document.getElementById("board");
+	boardEl.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+
+	function render() {
+		boardEl.innerHTML = "";
+		for (let r = 0; r < N; r++) {
+			
+			for (let c = 0; c < N; c++) {
+				const cell = grid[r][c];
+				const el = document.createElement("div");
+				el.className = "cell";
+				el.dataset.state = cell.state;
+				el.dataset.conflict = cell.conflict ? "true" : "false";
+				el.style.backgroundColor = (REGION_COLORS[cell.colour]);
+				el.style.outline = "none";
+
+				el.addEventListener("mousedown", () => onCellClick(r, c));
+				el.addEventListener("mouseenter", (e) =>{
+					if (e.buttons === 1){
+						onCellDrag(r, c)
+					}
+				})
+				boardEl.appendChild(el);
+			}
+		}
+	}
+
+
+	let bufferedqueen = [-1,-1]
+	function onCellClick(r, c) {
+		const cell = grid[r][c];
+		if (cell.state == "empty") {
+			set_cell(cell, "marked", true)
+			startDrag = "empty"
+		}
+		else if (cell.state == "marked"){
+			bufferedqueen = [r,c]
+			startDrag = "marked"
+		}
+		else if (cell.state == "queen") {
+			set_cell(cell, "empty")
+			wincheck()
+		}
+		render();
+	}
+
+	function onCellDrag(r, c){
+		const cell = grid[r][c]
+		if (startDrag == "empty"){
+			set_cell(cell, "marked", true)
+		}
+		else if (startDrag == "marked"){
+			set_cell(cell, "empty")
+			if(bufferedqueen[0] != r || bufferedqueen[1] != c){
+				bufferedqueen = [-1, -1]
+			}
+			
+		}
+		render();
+	}
+	let queencount = 0
+	let startDrag = "none"
+	document.addEventListener("mouseup", () => {
+		startDrag = "none"
+		if (bufferedqueen[0] != -1){
+			let cell = grid[bufferedqueen[0]][bufferedqueen[1]]
+			set_cell(cell, 'queen')
+			bufferedqueen = [-1,-1]
+			
+		}
+		render();
+	});
+
+	document.getElementById("btn-reset").addEventListener("click", () => {
+		initGrid();
+		render();
+	});
+
+	initGrid();
+	render();
+</script>

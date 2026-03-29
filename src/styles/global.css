@@ -1,1 +1,24 @@
 @import "tailwindcss";
+@theme {
+    --color-pinkbg: #FFF1FE
+}
+
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: rgb(80, 0, 0);
+}
+
+
+/*testing*/
+.colors2 {
+  --c0: #ffacac;
+  --c1: #b6f4ff;
+  --c2: #c3ffd1;
+  --c3: #f8ffb9;
+  --c4: #d5beff;
+  --c5: #ffcbeb;
+  --c6: #ffd2a9;
+  --c7: #92a6ff;
+  --c8: #947955;
+  --c9: #a5a5a5;
+}

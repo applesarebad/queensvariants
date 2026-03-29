@@ -1,0 +1,16 @@
+---
+const { level, index } = Astro.props;
+---
+
+<a
+  href={`/game?level=${index}`}
+  class="
+    relative rounded-[10px] overflow-hidden cursor-pointer
+    w-[150px] h-[150px] bg-[rgb(255,219,245)]
+    shadow-[2px_2px_2px_rgb(255,180,236)]
+    flex items-center justify-center
+    transition-all duration-100 hover:scale-[1.02] 
+  "
+>
+  <span class="text-sm font-medium text-[rgb(80, 0, 0);]">{level.name}</span>
+</a>

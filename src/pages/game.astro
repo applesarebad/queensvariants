@@ -1,58 +1,65 @@
 ---
-// src/pages/queens.astro
-// Drop this into your Astro project's src/pages/ folder
-import '../styles/global.css';
+import "../styles/global.css";
+import { PUZZLES } from "../puzzles.js";
 ---
 
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Queens</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link
-			href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap"
-			rel="stylesheet"
-		/>
+		<title>Queens Variants</title>
+		<script
+			src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"
+		></script>
 	</head>
 
-	<body
-		class="bg-gray-50 min-h-screen flex flex-col items-center justify-center px-4 py-10"
-	>
-		<div class="w-full max-w-1/4 mb-6">
+	<body class="bg-pinkbg min-h-screen flex flex-col items-center px-4 py-10">
+		<div class="w-full max-w-2/5 mb-6">
 			<div class="flex items-center justify-between">
-				<div>
-					<h1
-						class="text-2xl text-gray-900 tracking-tight"
-					>
-						Queens
-					</h1>
-					<p class="text-sm text-gray-400 mt-0.5">
-						Place one queen per row, column & region
+				<div >
+					<h1 class="text-2xl tracking-tight" id="header">Queens</h1>
+					<p class="text-lg" id="explain">
+						Place one queen per row, column and region
 					</p>
 				</div>
-				<button
-					id="btn-reset"
-					class="text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors duration-150"
+				<div class="flex items-center gap-3">
+					<button
+					id="reset"
+					class="text-xl hover:text-red-700 transition-colors duration-150"
 				>
 					Reset
+				</button> <br>
+				<button
+					id="autox"
+					class="text-xl hover:text-red-700 transition-colors duration-150"
+				>
+					Auto X
 				</button>
+				</div>
+				
 			</div>
 		</div>
 
 		<div
-  			id="board"
-  				class="w-full max-w-1/3  aspect-square grid overflow-hidden border border-gray-200"
-			>
+			id="board"
+			class="w-full max-w-1/3 aspect-square grid overflow-hidden border border-gray-200"
+		>
 		</div>
+		<br />
+
+		<p class="text-xl">
+			<span id="timer">0:00</span>
+		</p>
+		<br />
+		<br />
+
+		<a href="/" class="hover:text-red-700 transition-colors duration-150">
+			← Back
+		</a>
 	</body>
 </html>
 
 <style is:global>
-	body {
-		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-	}
-
 	.cell {
 		aspect-ratio: 1;
 		display: flex;
@@ -71,17 +78,17 @@ import '../styles/global.css';
 
 	.cell[data-state="marked"]::after {
 		content: "×";
-		color: rgba(0, 0, 0, 0.35);
+		color: #505050;
 		font-size: 2em;
 		font-weight: 300;
 		line-height: 1;
-		padding-bottom: 10%;
+		padding-bottom: 15%;
 	}
 
 	.cell[data-state="queen"]::after {
 		content: "♛";
 		font-size: 2em;
-		color: #1a1a1a;
+		color: #000000;
 		line-height: 1;
 		padding-bottom: 10%;
 	}
@@ -97,118 +104,131 @@ import '../styles/global.css';
 	}
 </style>
 
-<script>
+<script define:vars={{ PUZZLES }}>
+	let win = false;
 
-	const PUZZLE = {
-		n: 8,
-		regions: [
-			[100, 100, 1  , 1  , 1  , 2  , 2  , 2  ],
-			[100, 100, 1  , 1  , 1  , 2  , 2  , 2],
-			[100, 100, 3  , 3  , 4  , 4  , 2  , 2],
-			[100, 100, 3  , 3  , 4  , 4  , 2  , 2],
-			[6  , 6  , 3  , 4  , 4  , 4  , 120, 120],
-			[6  , 6  , 3  , 4  , 7  , 7  , 120, 120],
-			[6  , 6  , 6  , 7  , 7  , 7  , 120, 120],
-			[6  , 6  , 6  , 7  , 7  , 7  , 120, 120],
-		],
-	};
+	const params = new URLSearchParams(window.location.search);
+	const levelIndex = parseInt(params.get("level")) ?? 0;
+	const PUZZLE = PUZZLES[levelIndex];
+	const N = PUZZLE.n;
 	const REGION_COLORS = [
-		"#fde8e8",
-		"#fef3cd",
-		"#d4edda",
-		"#cce5ff",
-		"#e2d9f3",
-		"#fde8f5",
-		"#d6f5f0",
-		"#ffe8cc",
+		"#ffacac",
+		"#b6f4ff",
+		"#c3ffd1",
+		"#f8ffb9",
+		"#d5beff",
+		"#ffd2a9",
+		"#92a6ff",
+		"#ffcbeb",
+		"#947955",
+		"#a5a5a5",
 	];
+	header = document.getElementById("header");
+	description = document.getElementById("explain");
+	for (let variant of PUZZLE.variants) {
+		if (variant == "mirror") {
+			header.innerHTML += " + Mirrors";
+			description.innerHTML +=
+				"<br>" +
+				" Striped regions are mirrored vertically and horizontally";
+		}
+	}
 
 	// ───────────────────────────────────────────────────────────────────
-	const N = PUZZLE.n;
+
 	let grid = [];
 
-
-	const CELL_TYPES = ['normal', 'mirror', 'bomb', 'portal'];
+	const CELL_TYPES = ["normal", "mirror", "bomb", "portal"];
 
 	function initGrid() {
 		grid = Array.from({ length: N }, (_, r) =>
-			Array.from({ length: N }, (_, c) => 
-				makeCell(c, r)
-			),
+			Array.from({ length: N }, (_, c) => makeCell(c, r)),
 		);
 	}
-	function makeCell(c, r){
+	function makeCell(c, r) {
 		const region = PUZZLE.regions[r][c];
-			return {
-				state: "empty",
-				region: region,
-				colour: region % 20,
-				celltype: CELL_TYPES[Math.floor(region / 100)],
-				conflict: false,
-				seenqueens: 0,
-				r: r,
-				c: c,
-				humanplacer: false,
-			};
+		return {
+			state: "empty",
+			region: region,
+			colour: region % 50,
+			celltype: CELL_TYPES[Math.floor(region / 100)],
+			conflict: false,
+			seenqueens: 0,
+			r: r,
+			c: c,
+			humanplacer: false,
+		};
 	}
 
-
-
 	// ─────────────────────────────────────────────────────────────────
-	function set_cell(cell, state, human = false, mirrored = false){
-		if (state == 'queen'){
-			queen_set(cell)
+	let autox
+	if (localStorage.getItem("autox") !== null){
+		autox = (localStorage.getItem("autox").toLowerCase() === 'true')
+		console.log(autox)
+		if (!autox) {
+			document.getElementById('autox').style.textDecoration = "line-through"
 		}
-		else if (state == 'marked'){
-			cell.state = state
-			if(human){cell.humanplacer = true}
-		}
-		else{
-			let storage = cell.state
-			cell.state = state
-			cell.humanplacer = false
-			if (storage == 'queen'){
-				queencount -= 1
-				unmark(cell.r, cell.c)
+	}
+	else{
+		autox = true
+	}
+	
+	function set_cell(cell, state, human = false, mirrored = false) {
+		if (state == "queen") {
+			queen_set(cell);
+		} else if (state == "marked") {
+			cell.state = state;
+			if (human) {
+				cell.humanplacer = true;
+			}
+		} else {
+			let storage = cell.state;
+			cell.state = state;
+			cell.humanplacer = false;
+			if (storage == "queen") {
+				queencount -= 1;
+				unmark(cell.r, cell.c);
 			}
 		}
 
-		if (cell.celltype == 'mirror' && !mirrored){
-			let mirror_cell = grid[N-cell.r-1][N-cell.c-1]
-			set_cell(mirror_cell, state, human, true)
+		if (cell.celltype == "mirror" && !mirrored) {
+			let mirror_cell = grid[N - cell.r - 1][N - cell.c - 1];
+			set_cell(mirror_cell, state, human, true);
 		}
 	}
-	function queen_set(cell){
-		cell.state = 'queen'
-		cell.humanplacer = false
-		queencount += 1
-		automark(cell.r, cell.c)
-		wincheck()
+	function queen_set(cell) {
+		cell.state = "queen";
+		cell.humanplacer = false;
+		queencount += 1;
+		automark(cell.r, cell.c);
+		wincheck();
 	}
 
-	function findseen(r,c){
-		let total = []
-		let cell = grid[r][c]
-		for(let r2 = 0; r2 < N; r2++){
-			for(let c2 = 0; c2< N; c2++){
-				let check = grid[r2][c2]
-				let seen = false
-				if(r == r2 || c == c2 || cell.region == check.region){
-					seen = true
+	function findseen(r, c) {
+		let total = [];
+		let cell = grid[r][c];
+		for (let r2 = 0; r2 < N; r2++) {
+			for (let c2 = 0; c2 < N; c2++) {
+				let check = grid[r2][c2];
+				let seen = false;
+				if (r == r2 || c == c2 || cell.region == check.region) {
+					seen = true;
 				}
-				if(Math.abs(r-r2) <= 1 && Math.abs(c-c2) <= 1){
-					seen = true
+				if (Math.abs(r - r2) <= 1 && Math.abs(c - c2) <= 1) {
+					seen = true;
 				}
-				if(cell == check){
-					seen = false
+				if (cell == check) {
+					seen = false;
 				}
 
-				if(seen){
-					if(check.celltype == 'mirror'){
-						let mirror_cell = grid[N-r2-1][N-c2-1]
-						if(cell !== mirror_cell){total.push(grid[N-r2-1][N-c2-1])}
+				if (seen) {
+					if (check.celltype == "mirror") {
+						let mirror_cell = grid[N - r2 - 1][N - c2 - 1];
+						if (cell !== mirror_cell) {
+							total.push(grid[N - r2 - 1][N - c2 - 1]);
+						}
 					}
-					total.push(check)
+					total.push(check);
 				}
 			}
 		}
@@ -216,139 +236,193 @@ import '../styles/global.css';
 	}
 
 	function automark(r, c) {
-		let seen = findseen(r,c)
-		for(let check of seen){
-			check.seenqueens += 1
-			if(check.state == 'empty'){
-				set_cell(check, "marked")
+		let seen = findseen(r, c);
+		for (let check of seen) {
+			check.seenqueens += 1;
+			if (check.state == "empty" && autox) {
+				set_cell(check, "marked");
 			}
 		}
 	}
 
-	function unmark(r, c){
-		console.log(r,c)
-		let seen = findseen(r, c)
-		for(let check of seen){
-			check.seenqueens -= 1
-			if(check.seenqueens <= 0){
-				if(check.state == 'marked' && !check.humanplacer){
-					set_cell(check, "empty")
+	function unmark(r, c) {
+		let seen = findseen(r, c);
+		for (let check of seen) {
+			check.seenqueens -= 1;
+			if (check.seenqueens <= 0) {
+				if (check.state == "marked" && !check.humanplacer && autox) {
+					set_cell(check, "empty");
 				}
 			}
 		}
 	}
 
-	function wincheck(){
-		let clear = true
-		for(let r = 0; r < N; r++){
-			for(let c = 0; c< N; c++){
-				let cell = grid[r][c]
-				if (cell.state == 'queen'){
-					let seen = findseen(r,c)
-					let conflicter = false
-					for(let see of seen){
-						if(see.state == 'queen'){
-							see.conflict = true
-							cell.conflict = true
-							conflicter = true
-							clear = false
+	function wincheck() {
+		let clear = true;
+		for (let r = 0; r < N; r++) {
+			for (let c = 0; c < N; c++) {
+				let cell = grid[r][c];
+				if (cell.state == "queen") {
+					let seen = findseen(r, c);
+					let conflicter = false;
+					for (let see of seen) {
+						if (see.state == "queen") {
+							see.conflict = true;
+							cell.conflict = true;
+							conflicter = true;
+							clear = false;
 						}
 					}
-					if (!conflicter){
-						cell.conflict = false
+					if (!conflicter) {
+						cell.conflict = false;
 					}
-				}
-				else{
-					cell.conflict = false
+				} else {
+					cell.conflict = false;
 				}
 			}
 		}
 
-		if(clear && queencount == N){
-			console.log("youwin")
+		if (clear && queencount == N) {
+			console.log("youwin");
+			win = true;
+			stopTimer();
+			document.getElementById("timer").innerHTML =
+				"You won with a time of " + time + "!";
+			confetti({
+				particleCount: 200,
+				spread: 100,
+				origin: { y: 0.6 },
+			});
+			document.getElementById("reset").style.visibility = "hidden";
 		}
 	}
 
-
-
-	const boardEl = document.getElementById("board");
-	boardEl.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+	const board = document.getElementById("board");
+	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
 
 	function render() {
-		boardEl.innerHTML = "";
+		board.innerHTML = "";
 		for (let r = 0; r < N; r++) {
-			
 			for (let c = 0; c < N; c++) {
 				const cell = grid[r][c];
 				const el = document.createElement("div");
 				el.className = "cell";
 				el.dataset.state = cell.state;
 				el.dataset.conflict = cell.conflict ? "true" : "false";
-				el.style.backgroundColor = (REGION_COLORS[cell.colour]);
+				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
 
 				el.addEventListener("mousedown", () => onCellClick(r, c));
-				el.addEventListener("mouseenter", (e) =>{
-					if (e.buttons === 1){
-						onCellDrag(r, c)
+				el.addEventListener("mouseenter", (e) => {
+					if (e.buttons === 1) {
+						onCellDrag(r, c);
 					}
-				})
-				boardEl.appendChild(el);
+				});
+
+				let layers = [];
+				if (cell.celltype == "mirror") {
+					layers.push(`repeating-linear-gradient(
+						-45deg,
+						transparent, transparent 4px,
+						rgba(0,0,0,0.2) 6px, rgba(0,0,0,0.2) 6px
+					)`);
+				}
+				el.style.backgroundImage = layers.join(", ");
+				el.style.backgroundAttachment = "fixed";
+
+				board.appendChild(el);
 			}
 		}
 	}
 
-
-	let bufferedqueen = [-1,-1]
+	let bufferedqueen = [-1, -1];
 	function onCellClick(r, c) {
+		if (win) {
+			return;
+		}
 		const cell = grid[r][c];
 		if (cell.state == "empty") {
-			set_cell(cell, "marked", true)
-			startDrag = "empty"
-		}
-		else if (cell.state == "marked"){
-			bufferedqueen = [r,c]
-			startDrag = "marked"
-		}
-		else if (cell.state == "queen") {
-			set_cell(cell, "empty")
-			wincheck()
+			set_cell(cell, "marked", true);
+			startDrag = "empty";
+		} else if (cell.state == "marked") {
+			bufferedqueen = [r, c];
+			startDrag = "marked";
+		} else if (cell.state == "queen") {
+			set_cell(cell, "empty");
+			wincheck();
 		}
 		render();
 	}
 
-	function onCellDrag(r, c){
-		const cell = grid[r][c]
-		if (startDrag == "empty"){
-			set_cell(cell, "marked", true)
+	function onCellDrag(r, c) {
+		if (win) {
+			return;
 		}
-		else if (startDrag == "marked"){
-			set_cell(cell, "empty")
-			if(bufferedqueen[0] != r || bufferedqueen[1] != c){
-				bufferedqueen = [-1, -1]
+		const cell = grid[r][c];
+		if (startDrag == "empty") {
+			set_cell(cell, "marked", true);
+		} else if (startDrag == "marked") {
+			set_cell(cell, "empty");
+			if (bufferedqueen[0] != r || bufferedqueen[1] != c) {
+				bufferedqueen = [-1, -1];
 			}
-			
 		}
 		render();
 	}
-	let queencount = 0
-	let startDrag = "none"
+	let queencount = 0;
+	let startDrag = "none";
 	document.addEventListener("mouseup", () => {
-		startDrag = "none"
-		if (bufferedqueen[0] != -1){
-			let cell = grid[bufferedqueen[0]][bufferedqueen[1]]
-			set_cell(cell, 'queen')
-			bufferedqueen = [-1,-1]
-			
+		if (win) {
+			return;
+		}
+		startDrag = "none";
+		if (bufferedqueen[0] != -1) {
+			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
+			set_cell(cell, "queen");
+			bufferedqueen = [-1, -1];
 		}
 		render();
 	});
 
-	document.getElementById("btn-reset").addEventListener("click", () => {
+	document.getElementById("reset").addEventListener("click", () => {
 		initGrid();
 		render();
+		queencount = 0
+	});
+	
+	document.getElementById("autox").addEventListener("click", () => {
+		let toggle = document.getElementById("autox")
+		if (autox){
+			autox = false
+			toggle.style.textDecoration = "line-through"
+			localStorage.setItem("autox", false)
+		}	
+		else{
+			autox = true
+			toggle.style.textDecoration = "none";
+			localStorage.setItem("autox", true)
+		}
 	});
 
 	initGrid();
 	render();
+
+	let seconds = 0;
+	let timerInterval = null;
+	let time = "0:00";
+
+	function startTimer() {
+		timerInterval = setInterval(() => {
+			seconds++;
+			const m = Math.floor(seconds / 60);
+			const s = seconds % 60;
+			time = `${m}:${s.toString().padStart(2, "0")}`;
+			document.getElementById("timer").innerHTML = time;
+		}, 1000);
+	}
+
+	function stopTimer() {
+		clearInterval(timerInterval);
+	}
+	startTimer();
 </script>

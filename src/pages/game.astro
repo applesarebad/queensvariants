@@ -7,6 +7,7 @@ import { PUZZLES } from "../puzzles.js";
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<title>Queens Variants</title>
 		<script
 			src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"
@@ -33,7 +34,7 @@ import { PUZZLES } from "../puzzles.js";
 					id="autox"
 					class="text-xl hover:text-red-700 transition-colors duration-150"
 				>
-					Auto X
+					Auto&nbsp;X
 				</button>
 				</div>
 				
@@ -62,6 +63,8 @@ import { PUZZLES } from "../puzzles.js";
 <style is:global>
 	.cell {
 		aspect-ratio: 1;
+		container-type: inline-size;
+		
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -79,15 +82,15 @@ import { PUZZLES } from "../puzzles.js";
 	.cell[data-state="marked"]::after {
 		content: "×";
 		color: #505050;
-		font-size: 2em;
+		font-size: 70cqi;
 		font-weight: 300;
 		line-height: 1;
-		padding-bottom: 15%;
+		padding-bottom: 10%;
 	}
 
 	.cell[data-state="queen"]::after {
 		content: "♛";
-		font-size: 2em;
+		font-size: 70cqi;
 		color: #000000;
 		line-height: 1;
 		padding-bottom: 10%;
@@ -312,7 +315,10 @@ import { PUZZLES } from "../puzzles.js";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
 
-				el.addEventListener("mousedown", () => onCellClick(r, c));
+				el.addEventListener("mousedown", (e) => {
+					e.preventDefault();
+					onCellClick(r, c)
+				});
 				el.addEventListener("mouseenter", (e) => {
 					if (e.buttons === 1) {
 						onCellDrag(r, c);

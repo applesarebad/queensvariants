@@ -18,7 +18,9 @@ import { PUZZLES } from "../puzzles.js";
 		<div class="w-full max-w-[95vw] md:max-w-1/2 mb-6">
 			<div class="flex items-center justify-between">
 				<div>
-					<h1 class="text-2xl md:text-lg tracking-tight" id="header">Queens</h1>
+					<h1 class="text-2xl md:text-lg tracking-tight" id="header">
+						Queens!
+					</h1>
 					<p class="text-lg md:text-small" id="explain">
 						Place one queen per row, column and region
 					</p>
@@ -355,6 +357,15 @@ import { PUZZLES } from "../puzzles.js";
 						onCellDrag(r, c);
 					},
 					{ passive: false },
+				);
+				el.addEventListener(
+					"touchstart",
+					(e) => {
+						const cell = grid[r][c];
+						if (cell.state == "empty") startDrag = "empty";
+						else if (cell.state == "marked") startDrag = "marked";
+					},
+					{ passive: true },
 				);
 			}
 		}

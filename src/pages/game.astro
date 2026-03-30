@@ -403,6 +403,7 @@ import { PUZZLES } from "../puzzles.js";
 			return;
 		}
 		const cell = grid[r][c];
+		if (cell.state == "queen") return;
 		if (startDrag == "empty") {
 			set_cell(cell, "marked", true);
 		} else if (startDrag == "marked") {

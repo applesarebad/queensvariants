@@ -17,7 +17,7 @@ import { PUZZLES } from "../puzzles.js";
 	<body class="bg-pinkbg min-h-screen flex flex-col items-center py-3">
 		<div class="w-full max-w-[95vw] md:max-w-1/2 mb-6">
 			<div class="flex items-center justify-between">
-				<div >
+				<div>
 					<h1 class="text-2xl tracking-tight" id="header">Queens</h1>
 					<p class="text-lg" id="explain">
 						Place one queen per row, column and region
@@ -25,25 +25,25 @@ import { PUZZLES } from "../puzzles.js";
 				</div>
 				<div class="flex items-center gap-2">
 					<button
-					id="reset"
-					class="text-xl hover:text-red-700 transition-colors duration-150"
-				>
-					Reset
-				</button> <br>
-				<button
-					id="autox"
-					class="text-xl hover:text-red-700 transition-colors duration-150"
-				>
-					Auto&nbsp;X
-				</button>
+						id="reset"
+						class="text-xl hover:text-red-700 transition-colors duration-150"
+					>
+						Reset
+					</button>
+					<br />
+					<button
+						id="autox"
+						class="text-xl hover:text-red-700 transition-colors duration-150"
+					>
+						Auto&nbsp;X
+					</button>
 				</div>
-				
 			</div>
 		</div>
 
 		<div
 			id="board"
-			 class="w-full max-w-[95vw] md:max-w-1/3 aspect-square grid overflow-hidden border border-gray-200"
+			class="w-full max-w-[95vw] md:max-w-1/3 aspect-square grid overflow-hidden border border-gray-200"
 		>
 		</div>
 		<br />
@@ -63,7 +63,7 @@ import { PUZZLES } from "../puzzles.js";
 	.cell {
 		aspect-ratio: 1;
 		container-type: inline-size;
-		
+
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -163,18 +163,18 @@ import { PUZZLES } from "../puzzles.js";
 	}
 
 	// ─────────────────────────────────────────────────────────────────
-	let autox
-	if (localStorage.getItem("autox") !== null){
-		autox = (localStorage.getItem("autox").toLowerCase() === 'true')
-		console.log(autox)
+	let autox;
+	if (localStorage.getItem("autox") !== null) {
+		autox = localStorage.getItem("autox").toLowerCase() === "true";
+		console.log(autox);
 		if (!autox) {
-			document.getElementById('autox').style.textDecoration = "line-through"
+			document.getElementById("autox").style.textDecoration =
+				"line-through";
 		}
+	} else {
+		autox = true;
 	}
-	else{
-		autox = true
-	}
-	
+
 	function set_cell(cell, state, human = false, mirrored = false) {
 		if (state == "queen") {
 			queen_set(cell);
@@ -316,7 +316,7 @@ import { PUZZLES } from "../puzzles.js";
 
 				el.addEventListener("mousedown", (e) => {
 					e.preventDefault();
-					onCellClick(r, c)
+					onCellClick(r, c);
 				});
 				el.addEventListener("mouseenter", (e) => {
 					if (e.buttons === 1) {
@@ -336,6 +336,26 @@ import { PUZZLES } from "../puzzles.js";
 				el.style.backgroundAttachment = "fixed";
 
 				board.appendChild(el);
+
+				el.dataset.r = r;
+				el.dataset.c = c;
+
+				el.addEventListener(
+					"touchmove",
+					(e) => {
+						e.preventDefault();
+						const touch = e.touches[0];
+						const target = document.elementFromPoint(
+							touch.clientX,
+							touch.clientY,
+						);
+						if (!target || !target.dataset.r) return;
+						const r = parseInt(target.dataset.r);
+						const c = parseInt(target.dataset.c);
+						onCellDrag(r, c);
+					},
+					{ passive: false },
+				);
 			}
 		}
 	}
@@ -388,24 +408,33 @@ import { PUZZLES } from "../puzzles.js";
 		}
 		render();
 	});
+	document.addEventListener("touchend", () => {
+		if (win) return;
+		startDrag = "none";
+		if (bufferedqueen[0] != -1) {
+			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
+			set_cell(cell, "queen");
+			bufferedqueen = [-1, -1];
+		}
+		render();
+	});
 
 	document.getElementById("reset").addEventListener("click", () => {
 		initGrid();
 		render();
-		queencount = 0
+		queencount = 0;
 	});
-	
+
 	document.getElementById("autox").addEventListener("click", () => {
-		let toggle = document.getElementById("autox")
-		if (autox){
-			autox = false
-			toggle.style.textDecoration = "line-through"
-			localStorage.setItem("autox", false)
-		}	
-		else{
-			autox = true
+		let toggle = document.getElementById("autox");
+		if (autox) {
+			autox = false;
+			toggle.style.textDecoration = "line-through";
+			localStorage.setItem("autox", false);
+		} else {
+			autox = true;
 			toggle.style.textDecoration = "none";
-			localStorage.setItem("autox", true)
+			localStorage.setItem("autox", true);
 		}
 	});
 

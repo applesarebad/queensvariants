@@ -315,7 +315,7 @@ import { PUZZLES } from "../puzzles.js";
 			document.getElementById("reset").style.visibility = "hidden";
 		}
 	}
-
+	const isTouch = window.matchMedia("(pointer: coarse)").matches;
 	const board = document.getElementById("board");
 	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
 
@@ -330,7 +330,7 @@ import { PUZZLES } from "../puzzles.js";
 				el.dataset.conflict = cell.conflict ? "true" : "false";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
-
+				console.log(isTouch)
 				el.addEventListener("mousedown", (e) => {
 					e.preventDefault();
 					onCellClick(r, c);
@@ -361,7 +361,6 @@ import { PUZZLES } from "../puzzles.js";
 					"touchmove",
 					(e) => {
 						e.preventDefault();
-						wasDrag = true;
 						const touch = e.touches[0];
 						const target = document.elementFromPoint(
 							touch.clientX,
@@ -377,22 +376,15 @@ import { PUZZLES } from "../puzzles.js";
 				el.addEventListener(
 					"touchstart",
 					(e) => {
-						e.preventDefault();
-						wasDrag = false;
 						const cell = grid[r][c];
 						if (cell.state == "empty") startDrag = "empty";
 						else if (cell.state == "marked") startDrag = "marked";
 					},
-					{ passive: false },
+					{ passive: true },
 				);
-				el.addEventListener("touchend", (e) => {
-					e.preventDefault();
-					if (!wasDrag) onCellClick(r, c);
-				});
 			}
 		}
 	}
-	let wasDrag = false;
 	let bufferedqueen = [-1, -1];
 	function onCellClick(r, c) {
 		if (win) {
@@ -450,7 +442,6 @@ import { PUZZLES } from "../puzzles.js";
 			set_cell(cell, "queen");
 			bufferedqueen = [-1, -1];
 		}
-		wasDrag = false;
 		render();
 	});
 

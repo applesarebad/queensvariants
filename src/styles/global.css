@@ -6,6 +6,11 @@
 body{
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: rgb(80, 0, 0);
+    touch-action: manipulation;
+}
+
+.cell {
+  touch-action: manipulation; /* already have this? if not add it */
 }
 
 

@@ -329,7 +329,7 @@ import { PUZZLES } from "../puzzles.js";
 				el.dataset.conflict = cell.conflict ? "true" : "false";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
-				el.addEventListener("mousedown", (e) => {
+				el.addEventListener("pointerdown", (e) => {
 					e.preventDefault();
 					onCellClick(r, c);
 				});
@@ -378,7 +378,6 @@ import { PUZZLES } from "../puzzles.js";
 						const cell = grid[r][c];
 						if (cell.state == "empty") startDrag = "empty";
 						else if (cell.state == "marked") startDrag = "marked";
-						if (isIOS) onCellClick(r, c);
 					},
 					{ passive: true },
 				);

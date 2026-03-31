@@ -96,7 +96,7 @@ import { PUZZLES } from "../puzzles.js";
 	.cell[data-state="marked"]::after {
 		content: "×";
 		color: #505050;
-		font-size: 1.2em; 
+		font-size: 1.2em;
 		font-size: 70cqi;
 		font-weight: 300;
 		line-height: 1;
@@ -105,7 +105,7 @@ import { PUZZLES } from "../puzzles.js";
 
 	.cell[data-state="queen"]::after {
 		content: "♛";
-		 font-size: 1.2em; 
+		font-size: 1.2em;
 		font-size: 70cqi;
 		color: #000000;
 		line-height: 1;
@@ -354,14 +354,19 @@ import { PUZZLES } from "../puzzles.js";
 
 				board.appendChild(el);
 
+				//ANNOYING MOBILE STUFF
 				el.dataset.r = r;
 				el.dataset.c = c;
+				let touchStartX = 0;
+				let touchStartY = 0;
 
 				el.addEventListener(
 					"touchmove",
 					(e) => {
 						e.preventDefault();
-						wasDrag = true;
+						const dx = Math.abs(e.touches[0].clientX - touchStartX);
+						const dy = Math.abs(e.touches[0].clientY - touchStartY);
+						if (dx > 8 || dy > 8) wasDrag = true;
 						const touch = e.touches[0];
 						const target = document.elementFromPoint(
 							touch.clientX,
@@ -379,6 +384,8 @@ import { PUZZLES } from "../puzzles.js";
 					(e) => {
 						e.preventDefault();
 						wasDrag = false;
+						touchStartX = e.touches[0].clientX;
+						touchStartY = e.touches[0].clientY;
 						const cell = grid[r][c];
 						if (cell.state == "empty") startDrag = "empty";
 						else if (cell.state == "marked") startDrag = "marked";

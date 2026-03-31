@@ -183,7 +183,6 @@ import { PUZZLES } from "../puzzles.js";
 	let autox;
 	if (localStorage.getItem("autox") !== null) {
 		autox = localStorage.getItem("autox").toLowerCase() === "true";
-		console.log(autox);
 		if (!autox) {
 			document.getElementById("autox").style.textDecoration =
 				"line-through";
@@ -315,7 +314,8 @@ import { PUZZLES } from "../puzzles.js";
 			document.getElementById("reset").style.visibility = "hidden";
 		}
 	}
-	const isTouch = window.matchMedia("(pointer: coarse)").matches;
+	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+	if(isIOS) document.getElementById("reset").innerHTML ="ios"
 	const board = document.getElementById("board");
 	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
 
@@ -330,7 +330,6 @@ import { PUZZLES } from "../puzzles.js";
 				el.dataset.conflict = cell.conflict ? "true" : "false";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
-				console.log(isTouch)
 				el.addEventListener("mousedown", (e) => {
 					e.preventDefault();
 					onCellClick(r, c);
@@ -356,7 +355,8 @@ import { PUZZLES } from "../puzzles.js";
 
 				el.dataset.r = r;
 				el.dataset.c = c;
-
+				
+				console.log(isIOS)
 				el.addEventListener(
 					"touchmove",
 					(e) => {

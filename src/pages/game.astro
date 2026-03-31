@@ -394,7 +394,18 @@ import { PUZZLES } from "../puzzles.js";
 				);
 				el.addEventListener("touchend", (e) => {
 					e.preventDefault();
-					if (!wasDrag) onCellClick(r, c);
+					if (!wasDrag) {
+						const cell = grid[r][c];
+						if (cell.state == "empty") {
+							set_cell(cell, "marked", true);
+						} else if (cell.state == "marked") {
+							set_cell(cell, "queen");
+						} else if (cell.state == "queen") {
+							set_cell(cell, "empty");
+							wincheck();
+						}
+						render();
+					}
 				});
 			}
 		}
@@ -452,13 +463,7 @@ import { PUZZLES } from "../puzzles.js";
 	document.addEventListener("touchend", () => {
 		if (win) return;
 		startDrag = "none";
-		if (bufferedqueen[0] != -1) {
-			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
-			set_cell(cell, "queen");
-			bufferedqueen = [-1, -1];
-		}
 		wasDrag = false;
-		render();
 	});
 
 	document.getElementById("reset").addEventListener("click", () => {

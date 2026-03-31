@@ -96,7 +96,7 @@ import { PUZZLES } from "../puzzles.js";
 	.cell[data-state="marked"]::after {
 		content: "×";
 		color: #505050;
-		font-size: 1.2em;
+		font-size: 1.2em; 
 		font-size: 70cqi;
 		font-weight: 300;
 		line-height: 1;
@@ -105,7 +105,7 @@ import { PUZZLES } from "../puzzles.js";
 
 	.cell[data-state="queen"]::after {
 		content: "♛";
-		font-size: 1.2em;
+		 font-size: 1.2em; 
 		font-size: 70cqi;
 		color: #000000;
 		line-height: 1;
@@ -318,7 +318,6 @@ import { PUZZLES } from "../puzzles.js";
 
 	const board = document.getElementById("board");
 	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
-	const isTouch = window.matchMedia("(pointer: coarse)").matches;
 
 	function render() {
 		board.innerHTML = "";
@@ -332,17 +331,15 @@ import { PUZZLES } from "../puzzles.js";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
 
-				if (!isTouch) {
-					el.addEventListener("mousedown", (e) => {
-						e.preventDefault();
-						onCellClick(r, c);
-					});
-					el.addEventListener("mouseenter", (e) => {
-						if (e.buttons === 1) {
-							onCellDrag(r, c);
-						}
-					});
-				}
+				el.addEventListener("mousedown", (e) => {
+					e.preventDefault();
+					onCellClick(r, c);
+				});
+				el.addEventListener("mouseenter", (e) => {
+					if (e.buttons === 1) {
+						onCellDrag(r, c);
+					}
+				});
 
 				let layers = [];
 				if (cell.celltype == "mirror") {
@@ -357,19 +354,14 @@ import { PUZZLES } from "../puzzles.js";
 
 				board.appendChild(el);
 
-				//ANNOYING MOBILE STUFF
 				el.dataset.r = r;
 				el.dataset.c = c;
-				let touchStartX = 0;
-				let touchStartY = 0;
 
 				el.addEventListener(
 					"touchmove",
 					(e) => {
 						e.preventDefault();
-						const dx = Math.abs(e.touches[0].clientX - touchStartX);
-						const dy = Math.abs(e.touches[0].clientY - touchStartY);
-						if (dx > 8 || dy > 8) wasDrag = true;
+						wasDrag = true;
 						const touch = e.touches[0];
 						const target = document.elementFromPoint(
 							touch.clientX,
@@ -387,8 +379,6 @@ import { PUZZLES } from "../puzzles.js";
 					(e) => {
 						e.preventDefault();
 						wasDrag = false;
-						touchStartX = e.touches[0].clientX;
-						touchStartY = e.touches[0].clientY;
 						const cell = grid[r][c];
 						if (cell.state == "empty") startDrag = "empty";
 						else if (cell.state == "marked") startDrag = "marked";
@@ -397,18 +387,7 @@ import { PUZZLES } from "../puzzles.js";
 				);
 				el.addEventListener("touchend", (e) => {
 					e.preventDefault();
-					if (!wasDrag) {
-						const cell = grid[r][c];
-						if (cell.state == "empty") {
-							set_cell(cell, "marked", true);
-						} else if (cell.state == "marked") {
-							set_cell(cell, "queen");
-						} else if (cell.state == "queen") {
-							set_cell(cell, "empty");
-							wincheck();
-						}
-						render();
-					}
+					if (!wasDrag) onCellClick(r, c);
 				});
 			}
 		}
@@ -449,25 +428,30 @@ import { PUZZLES } from "../puzzles.js";
 		}
 		render();
 	}
-
 	let queencount = 0;
 	let startDrag = "none";
-	if (!isTouch) {
-		document.addEventListener("mouseup", () => {
-			if (win) return;
-			startDrag = "none";
-			if (bufferedqueen[0] != -1) {
-				let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
-				set_cell(cell, "queen");
-				bufferedqueen = [-1, -1];
-			}
-			render();
-		});
-	}
+	document.addEventListener("mouseup", () => {
+		if (win) {
+			return;
+		}
+		startDrag = "none";
+		if (bufferedqueen[0] != -1) {
+			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
+			set_cell(cell, "queen");
+			bufferedqueen = [-1, -1];
+		}
+		render();
+	});
 	document.addEventListener("touchend", () => {
 		if (win) return;
 		startDrag = "none";
+		if (bufferedqueen[0] != -1) {
+			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
+			set_cell(cell, "queen");
+			bufferedqueen = [-1, -1];
+		}
 		wasDrag = false;
+		render();
 	});
 
 	document.getElementById("reset").addEventListener("click", () => {

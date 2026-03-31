@@ -6,7 +6,10 @@ import { PUZZLES } from "../puzzles.js";
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<title>Queens Variants</title>
 		<script
@@ -356,6 +359,7 @@ import { PUZZLES } from "../puzzles.js";
 					"touchmove",
 					(e) => {
 						e.preventDefault();
+						wasDrag = true;
 						const touch = e.touches[0];
 						const target = document.elementFromPoint(
 							touch.clientX,
@@ -372,16 +376,21 @@ import { PUZZLES } from "../puzzles.js";
 					"touchstart",
 					(e) => {
 						e.preventDefault();
+						wasDrag = false;
 						const cell = grid[r][c];
 						if (cell.state == "empty") startDrag = "empty";
 						else if (cell.state == "marked") startDrag = "marked";
 					},
-					{ passive: true },
+					{ passive: false },
 				);
+				el.addEventListener("touchend", (e) => {
+					e.preventDefault();
+					if (!wasDrag) onCellClick(r, c);
+				});
 			}
 		}
 	}
-
+	let wasDrag = false;
 	let bufferedqueen = [-1, -1];
 	function onCellClick(r, c) {
 		if (win) {
@@ -439,6 +448,7 @@ import { PUZZLES } from "../puzzles.js";
 			set_cell(cell, "queen");
 			bufferedqueen = [-1, -1];
 		}
+		wasDrag = false;
 		render();
 	});
 

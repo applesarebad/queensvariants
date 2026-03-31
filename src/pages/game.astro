@@ -433,16 +433,6 @@ import { PUZZLES } from "../puzzles.js";
 		}
 		render();
 	});
-	document.addEventListener("touchend", () => {
-		if (win) return;
-		startDrag = "none";
-		if (bufferedqueen[0] != -1) {
-			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
-			set_cell(cell, "queen");
-			bufferedqueen = [-1, -1];
-		}
-		render();
-	});
 
 	document.getElementById("reset").addEventListener("click", () => {
 		initGrid();

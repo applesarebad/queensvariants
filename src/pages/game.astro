@@ -314,8 +314,7 @@ import { PUZZLES } from "../puzzles.js";
 			document.getElementById("reset").style.visibility = "hidden";
 		}
 	}
-	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-	if(isIOS) document.getElementById("reset").innerHTML ="ios"
+	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.userAgent.includes("Mac") && "ontouchend" in document); 
 	const board = document.getElementById("board");
 	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
 
@@ -379,6 +378,7 @@ import { PUZZLES } from "../puzzles.js";
 						const cell = grid[r][c];
 						if (cell.state == "empty") startDrag = "empty";
 						else if (cell.state == "marked") startDrag = "marked";
+						if (isIOS) onCellClick(r, c);
 					},
 					{ passive: true },
 				);

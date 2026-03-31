@@ -369,15 +369,6 @@ import { PUZZLES } from "../puzzles.js";
 					},
 					{ passive: false },
 				);
-				el.addEventListener(
-					"touchstart",
-					(e) => {
-						const cell = grid[r][c];
-						if (cell.state == "empty") startDrag = "empty";
-						else if (cell.state == "marked") startDrag = "marked";
-					},
-					{ passive: true },
-				);
 			}
 		}
 	}

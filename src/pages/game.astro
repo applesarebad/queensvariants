@@ -318,6 +318,7 @@ import { PUZZLES } from "../puzzles.js";
 
 	const board = document.getElementById("board");
 	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+	const isTouch = window.matchMedia("(pointer: coarse)").matches;
 
 	function render() {
 		board.innerHTML = "";
@@ -331,16 +332,17 @@ import { PUZZLES } from "../puzzles.js";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
 
-				el.addEventListener("mousedown", (e) => {
-					if (Date.now() - lastTouchTime < 500) return;
-					e.preventDefault();
-					onCellClick(r, c);
-				});
-				el.addEventListener("mouseenter", (e) => {
-					if (e.buttons === 1) {
-						onCellDrag(r, c);
-					}
-				});
+				if (!isTouch) {
+					el.addEventListener("mousedown", (e) => {
+						e.preventDefault();
+						onCellClick(r, c);
+					});
+					el.addEventListener("mouseenter", (e) => {
+						if (e.buttons === 1) {
+							onCellDrag(r, c);
+						}
+					});
+				}
 
 				let layers = [];
 				if (cell.celltype == "mirror") {
@@ -384,7 +386,6 @@ import { PUZZLES } from "../puzzles.js";
 					"touchstart",
 					(e) => {
 						e.preventDefault();
-						lastTouchTime = Date.now();
 						wasDrag = false;
 						touchStartX = e.touches[0].clientX;
 						touchStartY = e.touches[0].clientY;
@@ -449,22 +450,20 @@ import { PUZZLES } from "../puzzles.js";
 		render();
 	}
 
-	let lastTouchTime = 0;
 	let queencount = 0;
 	let startDrag = "none";
-	document.addEventListener("mouseup", () => {
-		if (Date.now() - lastTouchTime < 500) return;
-		if (win) {
-			return;
-		}
-		startDrag = "none";
-		if (bufferedqueen[0] != -1) {
-			let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
-			set_cell(cell, "queen");
-			bufferedqueen = [-1, -1];
-		}
-		render();
-	});
+	if (!isTouch) {
+		document.addEventListener("mouseup", () => {
+			if (win) return;
+			startDrag = "none";
+			if (bufferedqueen[0] != -1) {
+				let cell = grid[bufferedqueen[0]][bufferedqueen[1]];
+				set_cell(cell, "queen");
+				bufferedqueen = [-1, -1];
+			}
+			render();
+		});
+	}
 	document.addEventListener("touchend", () => {
 		if (win) return;
 		startDrag = "none";

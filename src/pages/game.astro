@@ -332,6 +332,7 @@ import { PUZZLES } from "../puzzles.js";
 				el.style.outline = "none";
 
 				el.addEventListener("mousedown", (e) => {
+					if (Date.now() - lastTouchTime < 500) return;
 					e.preventDefault();
 					onCellClick(r, c);
 				});
@@ -383,6 +384,7 @@ import { PUZZLES } from "../puzzles.js";
 					"touchstart",
 					(e) => {
 						e.preventDefault();
+						lastTouchTime = Date.now();
 						wasDrag = false;
 						touchStartX = e.touches[0].clientX;
 						touchStartY = e.touches[0].clientY;
@@ -446,9 +448,12 @@ import { PUZZLES } from "../puzzles.js";
 		}
 		render();
 	}
+
+	let lastTouchTime = 0;
 	let queencount = 0;
 	let startDrag = "none";
 	document.addEventListener("mouseup", () => {
+		if (Date.now() - lastTouchTime < 500) return;
 		if (win) {
 			return;
 		}

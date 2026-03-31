@@ -10,9 +10,11 @@ body{
 }
 
 .cell {
-  touch-action: manipulation; /* already have this? if not add it */
+  touch-action: manipulation;
 }
-
+.board {
+  touch-action: manipulation;
+}
 
 /*testing*/
 .colors2 {

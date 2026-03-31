@@ -301,7 +301,6 @@ import { PUZZLES } from "../puzzles.js";
 		}
 
 		if (clear && queencount == N) {
-			console.log("youwin");
 			win = true;
 			stopTimer();
 			document.getElementById("timer").innerHTML =
@@ -314,7 +313,6 @@ import { PUZZLES } from "../puzzles.js";
 			document.getElementById("reset").style.visibility = "hidden";
 		}
 	}
-	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.userAgent.includes("Mac") && "ontouchend" in document); 
 	const board = document.getElementById("board");
 	board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
 
@@ -355,7 +353,6 @@ import { PUZZLES } from "../puzzles.js";
 				el.dataset.r = r;
 				el.dataset.c = c;
 				
-				console.log(isIOS)
 				el.addEventListener(
 					"touchmove",
 					(e) => {
@@ -496,4 +493,7 @@ import { PUZZLES } from "../puzzles.js";
 			localStorage.setItem("autox", true);
 		}
 	});
+	document.ondblclick = function(e) {
+    	e.preventDefault();
+	}
 </script>

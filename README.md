@@ -4,6 +4,6 @@ All puzzles are manually created and not generated.
 
 Current List of Variants:
 
-Mirrors
+- Mirrors
 
 thats all for now... I hope to add more

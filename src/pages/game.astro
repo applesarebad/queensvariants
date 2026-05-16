@@ -65,8 +65,7 @@ import { PUZZLES } from "../puzzles.js";
 		<br />
 
 		<a
-			href="/"
-			ontouchend="window.location.href='/'"
+			id = "back"
 			class="hover:text-red-700 transition-colors duration-150"
 		>
 			← Back
@@ -539,6 +538,13 @@ import { PUZZLES } from "../puzzles.js";
 			localStorage.setItem("autox", true);
 		}
 	});
+	document.getElementById("back").addEventListener("click", () => {
+	if (document.referrer.includes(window.location.hostname)) {
+		history.back();
+	} else {
+		window.location.href = "/";
+	}
+	});
 
 	initGrid();
 	render();
@@ -583,6 +589,7 @@ import { PUZZLES } from "../puzzles.js";
 			localStorage.setItem("autox", true);
 		}
 	});
+	
 	document.ondblclick = function (e) {
 		e.preventDefault();
 	};

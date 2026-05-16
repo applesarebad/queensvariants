@@ -96,7 +96,7 @@ import { PUZZLES } from "../puzzles.js";
 	.cell[data-state="marked"]::after {
 		content: "×";
 		color: #505050;
-		font-size: 1.2em; 
+		font-size: 1.2em;
 		font-size: 70cqi;
 		font-weight: 300;
 		line-height: 1;
@@ -105,7 +105,7 @@ import { PUZZLES } from "../puzzles.js";
 
 	.cell[data-state="queen"]::after {
 		content: "♛";
-		 font-size: 1.2em; 
+		font-size: 1.2em;
 		font-size: 70cqi;
 		color: #000000;
 		line-height: 1;
@@ -120,6 +120,23 @@ import { PUZZLES } from "../puzzles.js";
 		border-width: 1px;
 		border-color: red;
 		pointer-events: none;
+	}
+	.portal-swirl {
+		position: absolute;
+		width: 72%;
+		height: 72%;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		border-radius: 50%;
+		background: conic-gradient(
+			rgba(255, 255, 255, 0.9) 0%,
+			transparent 40%,
+			rgba(255, 255, 255, 0.9) 70%,
+			transparent 100%
+		);
+		pointer-events: none;
+		box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.4);
 	}
 </style>
 
@@ -140,7 +157,20 @@ import { PUZZLES } from "../puzzles.js";
 		"#92a6ff",
 		"#ffcbeb",
 		"#947955",
-		"#a5a5a5",
+		"#c9ff4c",
+	];
+	const PORTAL_COLORS = [
+		"#00a2ff",
+"#ff9a00",
+"#22ff55",
+"#22ff55",
+"#ff0909",
+"#6c1dff",
+"#ffea2d",
+"#005a1b",
+"#f07dff",
+"#613700",
+"#3f3f3f"
 	];
 	header = document.getElementById("header");
 	description = document.getElementById("explain");
@@ -151,13 +181,20 @@ import { PUZZLES } from "../puzzles.js";
 				"<br>" +
 				" Striped regions are mirrored vertically and horizontally";
 		}
+		if (variant == "portal") {
+			header.innerHTML += " + Portals";
+			description.innerHTML +=
+				"<br>" +
+				" Queens can see through portals";
+		}
 	}
 
 	// ───────────────────────────────────────────────────────────────────
 
 	let grid = [];
 
-	const CELL_TYPES = ["normal", "mirror", "bomb", "portal"];
+	const CELL_TYPES = ["normal", "mirror", "portal"];
+	const STATIC_CELLS = ["portal"];
 
 	function initGrid() {
 		grid = Array.from({ length: N }, (_, r) =>
@@ -170,7 +207,7 @@ import { PUZZLES } from "../puzzles.js";
 			state: "empty",
 			region: region,
 			colour: region % 50,
-			celltype: CELL_TYPES[Math.floor(region / 100)],
+			celltype: CELL_TYPES[Math.floor(region / 1000)],
 			conflict: false,
 			seenqueens: 0,
 			r: r,
@@ -192,6 +229,10 @@ import { PUZZLES } from "../puzzles.js";
 	}
 
 	function set_cell(cell, state, human = false, mirrored = false) {
+		if (STATIC_CELLS.includes(cell.celltype)) {
+			return;
+		}
+
 		if (state == "queen") {
 			queen_set(cell);
 		} else if (state == "marked") {
@@ -222,6 +263,20 @@ import { PUZZLES } from "../puzzles.js";
 		wincheck();
 	}
 
+	function portalfind(r, c) {
+		cell = grid[r][c];
+		for (let r2 = 0; r2 < N; r2++) {
+			for (let c2 = 0; c2 < N; c2++) {
+				if (grid[r2][c2].celltype == "portal"    &&
+					Math.floor(grid[r2][c2].region/100) == Math.floor(cell.region/100) &&
+					grid[r2][c2] != grid[r][c]
+				) {
+					return [r2, c2];
+				}
+			}
+		}
+		return[r,c]
+	}
 	function findseen(r, c) {
 		let total = [];
 		let cell = grid[r][c];
@@ -229,28 +284,62 @@ import { PUZZLES } from "../puzzles.js";
 			for (let c2 = 0; c2 < N; c2++) {
 				let check = grid[r2][c2];
 				let seen = false;
-				if (r == r2 || c == c2 || cell.region == check.region) {
+				if (cell.region == check.region) {
 					seen = true;
 				}
 				if (Math.abs(r - r2) <= 1 && Math.abs(c - c2) <= 1) {
 					seen = true;
 				}
-				if (cell == check) {
+				if (check == cell) {
 					seen = false;
 				}
 
 				if (seen) {
-					if (check.celltype == "mirror") {
-						let mirror_cell = grid[N - r2 - 1][N - c2 - 1];
-						if (cell !== mirror_cell) {
-							total.push(grid[N - r2 - 1][N - c2 - 1]);
-						}
-					}
 					total.push(check);
 				}
 			}
 		}
-		return [...new Set(total)];
+		const DIRS = [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1],
+		];
+		for (let d of DIRS) {
+			let rtrack = r + d[0];
+			let ctrack = c + d[1];
+			while (0 <= rtrack && rtrack < N && 0 <= ctrack && ctrack < N) {
+				let check = grid[rtrack][ctrack];
+				console.log(rtrack, ctrack);
+				if (check.celltype == "portal") {
+					newpos = portalfind(rtrack, ctrack);
+					rtrack = newpos[0];
+					ctrack = newpos[1];
+				} else {
+					total.push(check);
+					if (check == cell) {
+						break;
+					}
+				}
+				rtrack += d[0];
+				ctrack += d[1];
+			}
+		}
+
+		let extras = [];
+		for (let mir of total) {
+			if (mir.celltype == "mirror" && mir != cell) {
+				let mirror_cell = grid[N - mir.r - 1][N - mir.c - 1];
+				if (cell !== mirror_cell) {
+					extras.push(grid[N - mir.r - 1][N - mir.c - 1]);
+				}
+			}
+		}
+		total.push(...extras);
+		total.push(cell);
+		totalset = [...new Set(total)];
+		totalset.splice(totalset.indexOf(cell), 1);
+		return totalset;
 	}
 
 	function automark(r, c) {
@@ -327,15 +416,35 @@ import { PUZZLES } from "../puzzles.js";
 				el.dataset.conflict = cell.conflict ? "true" : "false";
 				el.style.backgroundColor = REGION_COLORS[cell.colour];
 				el.style.outline = "none";
-				el.addEventListener("pointerdown", (e) => {
-					e.preventDefault();
-					onCellClick(r, c);
-				});
-				el.addEventListener("mouseenter", (e) => {
-					if (e.buttons === 1) {
-						onCellDrag(r, c);
-					}
-				});
+				if (STATIC_CELLS.includes(cell.celltype)) {
+				} else {
+					el.addEventListener("pointerdown", (e) => {
+						e.preventDefault();
+						onCellClick(r, c);
+					});
+					el.addEventListener("mouseenter", (e) => {
+						if (e.buttons === 1) {
+							onCellDrag(r, c);
+						}
+					});
+
+					el.addEventListener(
+						"touchmove",
+						(e) => {
+							e.preventDefault();
+							const touch = e.touches[0];
+							const target = document.elementFromPoint(
+								touch.clientX,
+								touch.clientY,
+							);
+							if (!target || !target.dataset.r) return;
+							const r = parseInt(target.dataset.r);
+							const c = parseInt(target.dataset.c);
+							onCellDrag(r, c);
+						},
+						{ passive: false },
+					);
+				}
 
 				let layers = [];
 				if (cell.celltype == "mirror") {
@@ -352,23 +461,13 @@ import { PUZZLES } from "../puzzles.js";
 
 				el.dataset.r = r;
 				el.dataset.c = c;
-				
-				el.addEventListener(
-					"touchmove",
-					(e) => {
-						e.preventDefault();
-						const touch = e.touches[0];
-						const target = document.elementFromPoint(
-							touch.clientX,
-							touch.clientY,
-						);
-						if (!target || !target.dataset.r) return;
-						const r = parseInt(target.dataset.r);
-						const c = parseInt(target.dataset.c);
-						onCellDrag(r, c);
-					},
-					{ passive: false },
-				);
+
+				if (cell.celltype == "portal") {
+  el.insertAdjacentHTML("beforeend", `
+  <div style="position:absolute;width:45%;height:85%;border-radius:50%;
+    background:${PORTAL_COLORS[Math.floor(cell.region / 100) - 20]};pointer-events:none;"></div>
+`);
+}
 			}
 		}
 	}
@@ -484,7 +583,7 @@ import { PUZZLES } from "../puzzles.js";
 			localStorage.setItem("autox", true);
 		}
 	});
-	document.ondblclick = function(e) {
-    	e.preventDefault();
-	}
+	document.ondblclick = function (e) {
+		e.preventDefault();
+	};
 </script>
